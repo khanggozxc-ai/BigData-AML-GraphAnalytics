@@ -2,25 +2,14 @@ from pathlib import Path
 import pandas as pd
 
 RAW_FILE = Path("data/raw/HI-Small_Trans.csv")
-OUTPUT_FILE = Path("data/processed/transactions_clean.csv")
+CLEAN_OUTPUT = Path("data/processed/transactions_clean.csv")
+GRAPH_OUTPUT = Path("data/processed/transactions_graph_edges.csv")
+REPORT_OUTPUT = Path("data/processed/data_quality_report.csv")
 
 CHUNK_SIZE = 100_000
 
 
 def normalize_columns(df: pd.DataFrame, chunk_id: int) -> pd.DataFrame:
-    """
-    Chuẩn hóa file HI-Small_Trans.csv về schema chung của hệ thống.
-
-    Schema đầu ra:
-    - transaction_id
-    - source_account
-    - target_account
-    - amount
-    - timestamp
-    - transaction_type
-    - is_laundering
-    """
-
     required_cols = [
         "Timestamp",
         "From Bank",
@@ -67,12 +56,20 @@ def normalize_columns(df: pd.DataFrame, chunk_id: int) -> pd.DataFrame:
     return output
 
 
-def clean_transactions(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Làm sạch dữ liệu sau khi đã chuẩn hóa.
-    """
-
+def clean_transactions(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     before = len(df)
+
+    invalid_amount = int((df["amount"].isna() | (df["amount"] <= 0)).sum())
+    invalid_timestamp = int(df["timestamp"].isna().sum())
+    missing_accounts = int(
+        (
+            df["source_account"].isna()
+            | df["target_account"].isna()
+            | (df["source_account"].astype(str).str.len() == 0)
+            | (df["target_account"].astype(str).str.len() == 0)
+        ).sum()
+    )
+    self_loop = int((df["source_account"] == df["target_account"]).sum())
 
     df = df.drop_duplicates(subset=["transaction_id"])
 
@@ -89,29 +86,35 @@ def clean_transactions(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df["target_account"].astype(str).str.len() > 0]
     df = df[df["amount"] > 0]
 
-    # Loại self-loop: A -> A
-    # Với MVP ngày 1, ta chỉ xét vòng có ít nhất 2 tài khoản khác nhau.
-    df = df[df["source_account"] != df["target_account"]]
-
     df = df.sort_values("timestamp").reset_index(drop=True)
 
     after = len(df)
 
-    print(f"Rows before cleaning: {before}")
-    print(f"Rows after cleaning : {after}")
-    print(f"Rows removed        : {before - after}")
+    report = {
+        "rows_before": before,
+        "rows_after_cleaning": after,
+        "rows_removed": before - after,
+        "invalid_amount": invalid_amount,
+        "invalid_timestamp": invalid_timestamp,
+        "missing_accounts": missing_accounts,
+        "self_loop_rows_kept_in_clean_data": self_loop,
+    }
 
-    return df
+    return df, report
 
 
 def main():
     if not RAW_FILE.exists():
         raise FileNotFoundError(f"Không tìm thấy file: {RAW_FILE}")
 
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    CLEAN_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
-    first_write = True
-    total_rows = 0
+    first_write_clean = True
+    first_write_graph = True
+
+    total_clean_rows = 0
+    total_graph_rows = 0
+    reports = []
 
     for chunk_id, chunk in enumerate(
         pd.read_csv(RAW_FILE, chunksize=CHUNK_SIZE),
@@ -120,22 +123,51 @@ def main():
         print(f"\nProcessing chunk {chunk_id}...")
 
         normalized = normalize_columns(chunk, chunk_id)
-        cleaned = clean_transactions(normalized)
+        cleaned, report = clean_transactions(normalized)
+
+        graph_edges = cleaned[
+            cleaned["source_account"] != cleaned["target_account"]
+        ].copy()
 
         cleaned.to_csv(
-            OUTPUT_FILE,
-            mode="w" if first_write else "a",
+            CLEAN_OUTPUT,
+            mode="w" if first_write_clean else "a",
             index=False,
-            header=first_write,
+            header=first_write_clean,
             encoding="utf-8-sig",
         )
 
-        total_rows += len(cleaned)
-        first_write = False
+        graph_edges.to_csv(
+            GRAPH_OUTPUT,
+            mode="w" if first_write_graph else "a",
+            index=False,
+            header=first_write_graph,
+            encoding="utf-8-sig",
+        )
+
+        report["chunk_id"] = chunk_id
+        report["graph_edge_rows"] = len(graph_edges)
+        reports.append(report)
+
+        total_clean_rows += len(cleaned)
+        total_graph_rows += len(graph_edges)
+
+        first_write_clean = False
+        first_write_graph = False
+
+        print(f"Rows after cleaning : {len(cleaned)}")
+        print(f"Graph edge rows     : {len(graph_edges)}")
+        print(f"Self-loop rows kept : {report['self_loop_rows_kept_in_clean_data']}")
+
+    report_df = pd.DataFrame(reports)
+    report_df.to_csv(REPORT_OUTPUT, index=False, encoding="utf-8-sig")
 
     print("\nDONE")
-    print(f"Saved clean data to: {OUTPUT_FILE}")
-    print(f"Total clean rows: {total_rows}")
+    print(f"Saved clean data to       : {CLEAN_OUTPUT}")
+    print(f"Saved graph edge data to  : {GRAPH_OUTPUT}")
+    print(f"Saved quality report to   : {REPORT_OUTPUT}")
+    print(f"Total clean rows          : {total_clean_rows}")
+    print(f"Total graph edge rows     : {total_graph_rows}")
 
 
 if __name__ == "__main__":
