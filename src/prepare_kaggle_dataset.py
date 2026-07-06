@@ -9,7 +9,17 @@ REPORT_OUTPUT = Path("data/processed/data_quality_report.csv")
 CHUNK_SIZE = 100_000
 
 
+def clean_text(series: pd.Series) -> pd.Series:
+    return (
+        series.astype("string")
+        .str.strip()
+        .replace({"": pd.NA, "nan": pd.NA, "None": pd.NA})
+    )
+
+
 def normalize_columns(df: pd.DataFrame, chunk_id: int) -> pd.DataFrame:
+    df = df.rename(columns=lambda col: str(col).strip()).reset_index(drop=True)
+
     required_cols = [
         "Timestamp",
         "From Bank",
@@ -31,21 +41,27 @@ def normalize_columns(df: pd.DataFrame, chunk_id: int) -> pd.DataFrame:
         f"T{chunk_id:04d}_{i:07d}" for i in range(len(df))
     ]
 
-    output["source_account"] = (
-        df["From Bank"].astype(str).str.strip()
-        + "_"
-        + df["Account"].astype(str).str.strip()
+    from_bank = clean_text(df["From Bank"])
+    from_account = clean_text(df["Account"])
+    to_bank = clean_text(df["To Bank"])
+    to_account = clean_text(df["Account.1"])
+
+    output["source_account"] = from_bank + "_" + from_account
+    output["target_account"] = to_bank + "_" + to_account
+
+    amount_text = (
+        df["Amount Paid"]
+        .astype("string")
+        .str.strip()
+        .str.replace(",", "", regex=False)
     )
 
-    output["target_account"] = (
-        df["To Bank"].astype(str).str.strip()
-        + "_"
-        + df["Account.1"].astype(str).str.strip()
-    )
+    output["amount"] = pd.to_numeric(amount_text, errors="coerce")
 
-    output["amount"] = pd.to_numeric(df["Amount Paid"], errors="coerce")
-    output["timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
-    output["transaction_type"] = df["Payment Format"].astype(str).str.strip()
+    timestamp_text = df["Timestamp"].astype("string").str.strip()
+    output["timestamp"] = pd.to_datetime(timestamp_text, errors="coerce")
+
+    output["transaction_type"] = clean_text(df["Payment Format"])
 
     output["is_laundering"] = (
         pd.to_numeric(df["Is Laundering"], errors="coerce")
@@ -61,34 +77,30 @@ def clean_transactions(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     invalid_amount = int((df["amount"].isna() | (df["amount"] <= 0)).sum())
     invalid_timestamp = int(df["timestamp"].isna().sum())
+
     missing_accounts = int(
         (
             df["source_account"].isna()
             | df["target_account"].isna()
-            | (df["source_account"].astype(str).str.len() == 0)
-            | (df["target_account"].astype(str).str.len() == 0)
+            | (df["source_account"].astype("string").str.strip() == "")
+            | (df["target_account"].astype("string").str.strip() == "")
         ).sum()
     )
+
     self_loop = int((df["source_account"] == df["target_account"]).sum())
 
-    df = df.drop_duplicates(subset=["transaction_id"])
-
-    df = df.dropna(
-        subset=[
-            "source_account",
-            "target_account",
-            "amount",
-            "timestamp",
-        ]
+    valid_mask = (
+        df["source_account"].notna()
+        & df["target_account"].notna()
+        & df["amount"].notna()
+        & (df["amount"] > 0)
+        & df["timestamp"].notna()
     )
 
-    df = df[df["source_account"].astype(str).str.len() > 0]
-    df = df[df["target_account"].astype(str).str.len() > 0]
-    df = df[df["amount"] > 0]
+    cleaned = df[valid_mask].copy()
+    cleaned = cleaned.sort_values("timestamp").reset_index(drop=True)
 
-    df = df.sort_values("timestamp").reset_index(drop=True)
-
-    after = len(df)
+    after = len(cleaned)
 
     report = {
         "rows_before": before,
@@ -100,7 +112,7 @@ def clean_transactions(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         "self_loop_rows_kept_in_clean_data": self_loop,
     }
 
-    return df, report
+    return cleaned, report
 
 
 def main():
