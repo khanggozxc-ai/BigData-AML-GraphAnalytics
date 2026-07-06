@@ -29,3 +29,13 @@ Raw CSV → Inspect columns → Normalize schema → Clean invalid records → E
 - Đã tạo dữ liệu sạch: data/processed/transactions_clean.csv
 - Đã chuẩn bị dữ liệu cho graph pipeline.
 - Đã chạy thử pipeline phát hiện cycle.
+
+Total clean rows: 5,078,345
+Total graph edge rows: 4,487,133
+Chunks processed: 51
+Invalid amount: 0
+Invalid timestamp: 0
+Missing accounts: 0
+
+Large CSV files are excluded from GitHub by .gitignore.
+They can be regenerated locally using prepare_kaggle_dataset.py.
