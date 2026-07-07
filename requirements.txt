@@ -4,3 +4,4 @@ networkx
 streamlit
 plotly
 pyvis
+streamlit-agraph
