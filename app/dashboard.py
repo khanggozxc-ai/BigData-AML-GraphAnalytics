@@ -169,6 +169,41 @@ st.markdown(
             margin-bottom: 0.75rem;
         }
 
+        .analyst-panel {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
+            border: 1px solid rgba(59, 130, 246, 0.30);
+            border-left: 4px solid #3B82F6;
+            border-radius: 18px;
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+        }
+
+        .analyst-tag {
+            display: inline-block;
+            padding: 0.22rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.16);
+            border: 1px solid rgba(59, 130, 246, 0.36);
+            color: #BFDBFE;
+            font-size: 0.78rem;
+            font-weight: 780;
+            margin-bottom: 0.55rem;
+        }
+
+        .analyst-title {
+            font-size: 1.05rem;
+            font-weight: 850;
+            color: #F8FAFC;
+            margin-bottom: 0.3rem;
+        }
+
+        .analyst-caption {
+            color: #CBD5E1;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
         .role-panel {
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
             border: 1px solid rgba(59, 130, 246, 0.30);
@@ -681,7 +716,7 @@ def render_header(df: pd.DataFrame) -> None:
     st.markdown(
         f"""
         <div class="app-header">
-            <div class="app-header-title">Trạm giám sát vòng giao dịch đáng ngờ</div>
+            <div class="app-header-title">Bàn làm việc chuyên viên rà soát AML</div>
             <div class="app-header-caption">
                 Hệ thống biểu diễn giao dịch dưới dạng đồ thị, phát hiện các vòng dòng tiền khép kín
                 và hỗ trợ rà soát theo mức rủi ro. Tổng dữ liệu hiện có: <b>{total_cases}</b> case,
@@ -784,67 +819,25 @@ def render_sidebar(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
     return filtered_df.reset_index(drop=True), filter_state
 
 
-def render_role_panel() -> str:
-    """Chọn vai trò xử lý trực tiếp ở nội dung chính để không bị ẩn trong sidebar."""
-    st.markdown('<div class="section-title">Vai trò xử lý</div>', unsafe_allow_html=True)
+
+def render_analyst_context() -> None:
+    """Dashboard cố định cho vai trò Chuyên viên rà soát."""
     st.markdown(
-        '<div class="section-caption">Chọn góc nhìn để hiểu dashboard đang phục vụ nhóm người dùng nào.</div>',
-        unsafe_allow_html=True,
-    )
-
-    selected_role = st.radio(
-        "Chọn vai trò",
-        options=[
-            "Quản lý",
-            "Chuyên viên rà soát",
-            "Người phản biện kỹ thuật",
-        ],
-        index=0,
-        horizontal=True,
-        key="role_selector_main_visible_v1",
-    )
-
-    role_info = {
-        "Quản lý": {
-            "tag": "Tổng quan vận hành",
-            "title": "Góc nhìn Quản lý",
-            "caption": (
-                "Theo dõi tổng số case, mức rủi ro, tổng dòng tiền nghi vấn và trạng thái xử lý. "
-                "Mục tiêu là nắm tình hình tổng quan và xác định nhóm case cần ưu tiên."
-            ),
-        },
-        "Chuyên viên rà soát": {
-            "tag": "Điều tra từng case",
-            "title": "Góc nhìn Chuyên viên rà soát",
-            "caption": (
-                "Tập trung vào từng case cụ thể: đường đi dòng tiền, các giao dịch tạo thành chu trình, "
-                "hành động đề xuất và checklist kiểm tra. Mục tiêu là hỗ trợ quá trình rà soát cảnh báo."
-            ),
-        },
-        "Người phản biện kỹ thuật": {
-            "tag": "Kiểm tra kỹ thuật",
-            "title": "Góc nhìn Người phản biện kỹ thuật",
-            "caption": (
-                "Tập trung vào pipeline, logic phát hiện chu trình, cách tính điểm rủi ro, giới hạn của NetworkX "
-                "và hướng nâng cấp Phase 2 bằng PySpark, Neo4j, API backend và dashboard theo vai trò."
-            ),
-        },
-    }
-
-    current = role_info[selected_role]
-
-    st.markdown(
-        f'''
-        <div class="role-panel">
-            <div class="role-tag">{current["tag"]}</div>
-            <div class="role-title">{current["title"]}</div>
-            <div class="role-caption">{current["caption"]}</div>
+        """
+        <div class="analyst-panel">
+            <div class="analyst-tag">Vai trò cố định: Chuyên viên rà soát</div>
+            <div class="analyst-title">Bàn làm việc rà soát case giao dịch đáng ngờ</div>
+            <div class="analyst-caption">
+                Dashboard này tập trung vào công việc của chuyên viên: xem hàng đợi case,
+                chọn case cần kiểm tra, phân tích đường đi dòng tiền, xem các giao dịch tạo thành chu trình
+                và dùng checklist để rà soát. Cảnh báo chỉ là dấu hiệu hỗ trợ điều tra,
+                không phải kết luận rửa tiền.
+            </div>
         </div>
-        ''',
+        """,
         unsafe_allow_html=True,
     )
 
-    return selected_role
 
 
 def render_phase2_notes() -> None:
@@ -1477,26 +1470,26 @@ def main() -> None:
         st.stop()
 
     render_header(df)
-    selected_role = render_role_panel()
+    render_analyst_context()
     filtered_df, _ = render_sidebar(df)
 
-    overview_tab, cases_tab, flow_tab, notes_tab = st.tabs(
+    case_tab, flow_tab, overview_tab, notes_tab = st.tabs(
         [
-            "Tổng quan",
-            "Danh sách cảnh báo",
-            "Xem dòng tiền",
-            "Giải thích hệ thống",
+            "Hàng đợi rà soát",
+            "Điều tra dòng tiền",
+            "Tổng quan hỗ trợ",
+            "Ghi chú hệ thống",
         ]
     )
 
-    with overview_tab:
-        render_overview(filtered_df)
-
-    with cases_tab:
+    with case_tab:
         render_case_table(filtered_df)
 
     with flow_tab:
         render_flow_view(filtered_df)
+
+    with overview_tab:
+        render_overview(filtered_df)
 
     with notes_tab:
         render_model_notes(filtered_df)
