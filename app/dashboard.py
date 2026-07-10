@@ -169,6 +169,41 @@ st.markdown(
             margin-bottom: 0.75rem;
         }
 
+        .role-panel {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
+            border: 1px solid rgba(59, 130, 246, 0.30);
+            border-left: 4px solid #3B82F6;
+            border-radius: 18px;
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+        }
+
+        .role-title {
+            font-size: 1.05rem;
+            font-weight: 850;
+            color: #F8FAFC;
+            margin-bottom: 0.3rem;
+        }
+
+        .role-caption {
+            color: #CBD5E1;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .role-tag {
+            display: inline-block;
+            padding: 0.22rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.16);
+            border: 1px solid rgba(59, 130, 246, 0.36);
+            color: #BFDBFE;
+            font-size: 0.78rem;
+            font-weight: 780;
+            margin-bottom: 0.55rem;
+        }
+
         .section-title {
             font-size: 1.05rem;
             font-weight: 820;
@@ -747,6 +782,100 @@ def render_sidebar(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
     }
 
     return filtered_df.reset_index(drop=True), filter_state
+
+
+def render_role_panel() -> str:
+    """Chọn vai trò xử lý trực tiếp ở nội dung chính để không bị ẩn trong sidebar."""
+    st.markdown('<div class="section-title">Vai trò xử lý</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-caption">Chọn góc nhìn để hiểu dashboard đang phục vụ nhóm người dùng nào.</div>',
+        unsafe_allow_html=True,
+    )
+
+    selected_role = st.radio(
+        "Chọn vai trò",
+        options=[
+            "Quản lý",
+            "Chuyên viên rà soát",
+            "Người phản biện kỹ thuật",
+        ],
+        index=0,
+        horizontal=True,
+        key="role_selector_main_visible_v1",
+    )
+
+    role_info = {
+        "Quản lý": {
+            "tag": "Tổng quan vận hành",
+            "title": "Góc nhìn Quản lý",
+            "caption": (
+                "Theo dõi tổng số case, mức rủi ro, tổng dòng tiền nghi vấn và trạng thái xử lý. "
+                "Mục tiêu là nắm tình hình tổng quan và xác định nhóm case cần ưu tiên."
+            ),
+        },
+        "Chuyên viên rà soát": {
+            "tag": "Điều tra từng case",
+            "title": "Góc nhìn Chuyên viên rà soát",
+            "caption": (
+                "Tập trung vào từng case cụ thể: đường đi dòng tiền, các giao dịch tạo thành chu trình, "
+                "hành động đề xuất và checklist kiểm tra. Mục tiêu là hỗ trợ quá trình rà soát cảnh báo."
+            ),
+        },
+        "Người phản biện kỹ thuật": {
+            "tag": "Kiểm tra kỹ thuật",
+            "title": "Góc nhìn Người phản biện kỹ thuật",
+            "caption": (
+                "Tập trung vào pipeline, logic phát hiện chu trình, cách tính điểm rủi ro, giới hạn của NetworkX "
+                "và hướng nâng cấp Phase 2 bằng PySpark, Neo4j, API backend và dashboard theo vai trò."
+            ),
+        },
+    }
+
+    current = role_info[selected_role]
+
+    st.markdown(
+        f'''
+        <div class="role-panel">
+            <div class="role-tag">{current["tag"]}</div>
+            <div class="role-title">{current["title"]}</div>
+            <div class="role-caption">{current["caption"]}</div>
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+
+    return selected_role
+
+
+def render_phase2_notes() -> None:
+    """Phần giải thích Phase 2 để xử lý góp ý Big Data và lưu graph."""
+    st.markdown('<div class="section-title">Phase 2 - Hướng nâng cấp xử lý góp ý</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="section-card">
+            <b>1. PySpark cho dữ liệu lớn</b><br>
+            NetworkX phù hợp cho MVP và graph nhỏ-vừa. Khi dữ liệu tăng lên lớn hơn,
+            hệ thống nên nâng cấp sang PySpark hoặc GraphFrames để xử lý phân tán.
+        </div>
+        <div class="section-card">
+            <b>2. Neo4j cho lưu trữ graph</b><br>
+            Ở MVP, graph được dựng tạm từ CSV. Phase 2 đề xuất Neo4j để lưu tài khoản và giao dịch
+            theo mô hình graph tự nhiên, hỗ trợ truy vấn quan hệ và trực quan hóa tốt hơn.
+        </div>
+        <div class="section-card">
+            <b>3. Dashboard theo vai trò xử lý</b><br>
+            Dashboard được bổ sung góc nhìn Quản lý, Chuyên viên rà soát và Người phản biện kỹ thuật
+            để người xem hiểu rõ mỗi nhóm người dùng sử dụng hệ thống cho mục đích gì.
+        </div>
+        <div class="section-card">
+            <b>4. Backend và case management</b><br>
+            Phase 2 có thể bổ sung FastAPI làm API backend và database riêng để lưu người phụ trách,
+            trạng thái case, lịch sử xử lý và audit log.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 
 def render_overview(df: pd.DataFrame) -> None:
@@ -1348,6 +1477,7 @@ def main() -> None:
         st.stop()
 
     render_header(df)
+    selected_role = render_role_panel()
     filtered_df, _ = render_sidebar(df)
 
     overview_tab, cases_tab, flow_tab, notes_tab = st.tabs(
