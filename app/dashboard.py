@@ -169,6 +169,76 @@ st.markdown(
             margin-bottom: 0.75rem;
         }
 
+        .analyst-panel {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
+            border: 1px solid rgba(59, 130, 246, 0.30);
+            border-left: 4px solid #3B82F6;
+            border-radius: 18px;
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+        }
+
+        .analyst-tag {
+            display: inline-block;
+            padding: 0.22rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.16);
+            border: 1px solid rgba(59, 130, 246, 0.36);
+            color: #BFDBFE;
+            font-size: 0.78rem;
+            font-weight: 780;
+            margin-bottom: 0.55rem;
+        }
+
+        .analyst-title {
+            font-size: 1.05rem;
+            font-weight: 850;
+            color: #F8FAFC;
+            margin-bottom: 0.3rem;
+        }
+
+        .analyst-caption {
+            color: #CBD5E1;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .role-panel {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
+            border: 1px solid rgba(59, 130, 246, 0.30);
+            border-left: 4px solid #3B82F6;
+            border-radius: 18px;
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+        }
+
+        .role-title {
+            font-size: 1.05rem;
+            font-weight: 850;
+            color: #F8FAFC;
+            margin-bottom: 0.3rem;
+        }
+
+        .role-caption {
+            color: #CBD5E1;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .role-tag {
+            display: inline-block;
+            padding: 0.22rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.16);
+            border: 1px solid rgba(59, 130, 246, 0.36);
+            color: #BFDBFE;
+            font-size: 0.78rem;
+            font-weight: 780;
+            margin-bottom: 0.55rem;
+        }
+
         .section-title {
             font-size: 1.05rem;
             font-weight: 820;
@@ -646,7 +716,7 @@ def render_header(df: pd.DataFrame) -> None:
     st.markdown(
         f"""
         <div class="app-header">
-            <div class="app-header-title">Trạm giám sát vòng giao dịch đáng ngờ</div>
+            <div class="app-header-title">Bàn làm việc chuyên viên rà soát AML</div>
             <div class="app-header-caption">
                 Hệ thống biểu diễn giao dịch dưới dạng đồ thị, phát hiện các vòng dòng tiền khép kín
                 và hỗ trợ rà soát theo mức rủi ro. Tổng dữ liệu hiện có: <b>{total_cases}</b> case,
@@ -747,6 +817,58 @@ def render_sidebar(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
     }
 
     return filtered_df.reset_index(drop=True), filter_state
+
+
+
+def render_analyst_context() -> None:
+    """Dashboard cố định cho vai trò Chuyên viên rà soát."""
+    st.markdown(
+        """
+        <div class="analyst-panel">
+            <div class="analyst-tag">Vai trò cố định: Chuyên viên rà soát</div>
+            <div class="analyst-title">Bàn làm việc rà soát case giao dịch đáng ngờ</div>
+            <div class="analyst-caption">
+                Dashboard này tập trung vào công việc của chuyên viên: xem hàng đợi case,
+                chọn case cần kiểm tra, phân tích đường đi dòng tiền, xem các giao dịch tạo thành chu trình
+                và dùng checklist để rà soát. Cảnh báo chỉ là dấu hiệu hỗ trợ điều tra,
+                không phải kết luận rửa tiền.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+
+def render_phase2_notes() -> None:
+    """Phần giải thích Phase 2 để xử lý góp ý Big Data và lưu graph."""
+    st.markdown('<div class="section-title">Phase 2 - Hướng nâng cấp xử lý góp ý</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="section-card">
+            <b>1. PySpark cho dữ liệu lớn</b><br>
+            NetworkX phù hợp cho MVP và graph nhỏ-vừa. Khi dữ liệu tăng lên lớn hơn,
+            hệ thống nên nâng cấp sang PySpark hoặc GraphFrames để xử lý phân tán.
+        </div>
+        <div class="section-card">
+            <b>2. Neo4j cho lưu trữ graph</b><br>
+            Ở MVP, graph được dựng tạm từ CSV. Phase 2 đề xuất Neo4j để lưu tài khoản và giao dịch
+            theo mô hình graph tự nhiên, hỗ trợ truy vấn quan hệ và trực quan hóa tốt hơn.
+        </div>
+        <div class="section-card">
+            <b>3. Dashboard theo vai trò xử lý</b><br>
+            Dashboard được bổ sung góc nhìn Quản lý, Chuyên viên rà soát và Người phản biện kỹ thuật
+            để người xem hiểu rõ mỗi nhóm người dùng sử dụng hệ thống cho mục đích gì.
+        </div>
+        <div class="section-card">
+            <b>4. Backend và case management</b><br>
+            Phase 2 có thể bổ sung FastAPI làm API backend và database riêng để lưu người phụ trách,
+            trạng thái case, lịch sử xử lý và audit log.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 
 def render_overview(df: pd.DataFrame) -> None:
@@ -1348,25 +1470,26 @@ def main() -> None:
         st.stop()
 
     render_header(df)
+    render_analyst_context()
     filtered_df, _ = render_sidebar(df)
 
-    overview_tab, cases_tab, flow_tab, notes_tab = st.tabs(
+    case_tab, flow_tab, overview_tab, notes_tab = st.tabs(
         [
-            "Tổng quan",
-            "Danh sách cảnh báo",
-            "Xem dòng tiền",
-            "Giải thích hệ thống",
+            "Hàng đợi rà soát",
+            "Điều tra dòng tiền",
+            "Tổng quan hỗ trợ",
+            "Ghi chú hệ thống",
         ]
     )
 
-    with overview_tab:
-        render_overview(filtered_df)
-
-    with cases_tab:
+    with case_tab:
         render_case_table(filtered_df)
 
     with flow_tab:
         render_flow_view(filtered_df)
+
+    with overview_tab:
+        render_overview(filtered_df)
 
     with notes_tab:
         render_model_notes(filtered_df)

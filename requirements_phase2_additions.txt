@@ -1,0 +1,2 @@
+# Optional dependencies for Phase 2 prototype
+pyspark>=3.5.0
