@@ -857,8 +857,8 @@ def render_phase2_notes() -> None:
         </div>
         <div class="section-card">
             <b>3. Dashboard theo vai trò xử lý</b><br>
-            Dashboard được bổ sung góc nhìn Quản lý, Chuyên viên rà soát và Người phản biện kỹ thuật
-            để người xem hiểu rõ mỗi nhóm người dùng sử dụng hệ thống cho mục đích gì.
+            Dashboard được tập trung vào vai trò Chuyên viên rà soát để bám sát người trực tiếp xử lý cảnh báo AML.
+            Giao diện hỗ trợ quy trình xem hàng đợi case, chọn case, điều tra dòng tiền và ghi nhận định hướng xử lý.
         </div>
         <div class="section-card">
             <b>4. Backend và case management</b><br>
@@ -1493,6 +1493,7 @@ def main() -> None:
 
     with notes_tab:
         render_model_notes(filtered_df)
+        render_phase2_notes()
 
 
 if __name__ == "__main__":
